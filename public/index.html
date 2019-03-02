@@ -7,6 +7,20 @@
 </head>
 
 <body>
-<p>Welcome to the chat app</p>
+<h2 id="welcomeText"></h2>
+
+
+<div id="conversation" style="background-color:#2222; width: 400px; max-height:600px;min-height:500px;overflow-y: scroll;">
+</div>
+<form id="message-form">
+    <input name="message" id="inputMessage">
+    <input type="submit" value="Send" id="sendButton">
+</form>
+<button id="send-location">Shere location</button>
+
+
+<!--<button id="increment">+1</button>-->
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/chat.js"></script>
 </body>
 </html>
