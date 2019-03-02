@@ -16,7 +16,7 @@ app.use(express.static(publicPath));
 
 io.on('connection',(socket)=>{
     console.log('New WebSocket connection')
-    socket.emit('helloMessage','Hello on chat app!')
+    socket.emit('helloMessage','Node chat app')
    socket.broadcast.emit('sendMessage',"A new user has joined!"); //broadcast send to everyone except that actually connected
 
     socket.on('sendMessage',(sendMessage,callback)=>{
