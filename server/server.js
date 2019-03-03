@@ -1,49 +1,66 @@
-const express = require("express");
-const path = require('path')//to jest budowane nie trzeba instalowac
-const socketIO = require('socket.io');
-const http = require('http') //wbudowana biblioteka
+const path = require('path')
+const http = require('http')
+const express = require('express')
+const socketio = require('socket.io')
 const Filter = require('bad-words')
 
-const port = process.env.PORT || 3000;
-const publicPath = path.join(__dirname,'../public') // dirname to folder w którym jest ten glowny plik
+const app = express()
+const server = http.createServer(app)
+const io = socketio(server)
 
-var app = express();
-var server = http.createServer(app);
-var io = socketIO(server);
+const port = process.env.PORT || 3000
+const publicDirectoryPath = path.join(__dirname, '../public')
+const {generateMessage,generateLocationMessage} = require('./utils/messages')
+const {addUser,removeUser,getUser,getUsersInRoom} = require('./utils/users')
+app.use(express.static(publicDirectoryPath))
 
-app.use(express.static(publicPath));
-
-
-io.on('connection',(socket)=>{
+io.on('connection', (socket) => {
     console.log('New WebSocket connection')
-    socket.emit('helloMessage','Node chat app')
-   socket.broadcast.emit('sendMessage',"A new user has joined!"); //broadcast send to everyone except that actually connected
 
-    socket.on('sendMessage',(sendMessage,callback)=>{
-        const filter = new Filter() //bad-wrods npm
-        if(filter.isProfane(sendMessage))
-        {
+   //Listen for join users and then send message, and broadcast his name to other users in room
+   socket.on('join',({username,room},callback)=>{
+       const {error,user} =  addUser({id: socket.id,username: username,room: room})
+           if(error)
+           {
+               return callback(error)
+           }
+
+       socket.join(room)
+
+       socket.emit('message', generateMessage('Admin','Node chat App'))
+       socket.broadcast.to(user.room).emit('message', generateMessage(`${user.username} has joined!`))//broadcast send message to everyone when somone join, .to send message to room
+        io.to(user.room).emit
+       //socket.emit,io.emit, socket.broadcast.emit
+       //io.to.emit
+   })
+    socket.on('sendMessage', (message, callback) => {
+        const filter = new Filter()//bad-words libraary
+
+        if (filter.isProfane(message)) {
             return callback('Profanity is not allowed!')
         }
-
-        console.log(sendMessage);
-        io.emit('sendMessage',sendMessage);
-        callback('Delivered!');//wywoluje gdy wysle wiamdosc dow syztskoch to wtedy uzytknik dostanie wiadomosc ze dostarczona
+        const {room,username,id} = getUser(socket.id)
+        io.to(room).emit('message', generateMessage(username,message))
+        callback()
     })
 
-    socket.on('position',(position,callback)=>{
-        io.emit('sendMessage',`https://google.com/maps?q=${position.latitude},${position.longitude}`);
-        console.log(position);
-        callback('Delivered!');
+    socket.on('sendLocation', (coords, callback) => {
+        const {room,username,id} = getUser(socket.id)
+
+        io.to(room).emit('locationMessage', generateLocationMessage(username,`https://google.com/maps?q=${coords.latitude},${coords.longitude}`))
+        callback()
     })
 
-    socket.on('disconnect',()=>{
-        io.emit('sendMessage',"A user has left!");
+    socket.on('disconnect', () => {
+        const user = removeUser(socket.id)
+
+        if(user){
+            io.to(user.room).emit('message',generateMessage(`A ${user.username} has left!`))
+        }
+
     })
 })
 
-
-server.listen(port,()=>{
-    console.log(`server is up on port ${port}`);
-});
-
+server.listen(port, () => {
+    console.log(`Server is up on port ${port}!`)
+})
