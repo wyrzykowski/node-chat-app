@@ -29,7 +29,10 @@ io.on('connection', (socket) => {
 
        socket.emit('message', generateMessage('Admin','Node chat App'))
        socket.broadcast.to(user.room).emit('message', generateMessage(`${user.username} has joined!`))//broadcast send message to everyone when somone join, .to send message to room
-        io.to(user.room).emit
+        io.to(user.room).emit('roomData',{
+            room: user.room,
+            users: getUsersInRoom(user.room)
+        })
        //socket.emit,io.emit, socket.broadcast.emit
        //io.to.emit
    })
@@ -54,8 +57,12 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         const user = removeUser(socket.id)
 
-        if(user){
+        if(user){ // update list of logeed in users:
             io.to(user.room).emit('message',generateMessage(`A ${user.username} has left!`))
+            io.to(user.room).emit('roomData',{
+                room: user.room,
+                users:getUsersInRoom(user.room)
+            })
         }
 
     })

@@ -11,6 +11,7 @@ const $messages = document.querySelector('#messages')
 // Templates
 const messageTemplate = document.querySelector('#message-template').innerHTML;
 const locationMessageTemplate = document.querySelector('#location-message-template').innerHTML;
+const sidebarTemplate = document.querySelector('#sidebar-template').innerHTML;
 
 //Options - uzywam tej bibliotekiz  pliku html
 const {username,room}= Qs.parse(location.search,{ignoreQueryPrefix:true}) //parse that whast is adress in browser, ingoreQuearyPerefx remove ?
@@ -39,7 +40,14 @@ socket.on('locationMessage',( locationMessage)=>{
     $messages.insertAdjacentHTML('beforeend', html)
 })
 
+socket.on('roomData',({room,users})=>{
 
+    const html = Mustache.render(sidebarTemplate,{
+        room,
+        users
+    })
+    document.querySelector('#sidebar').innerHTML = html
+})
 
 $messageForm.addEventListener('submit', (e) => {
     e.preventDefault()
